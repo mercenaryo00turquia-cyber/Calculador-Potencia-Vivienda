@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Aplicación cálculo previsión de cargas</title>
+<style>
+  :root{
+    --bg:#f3f4ff;--card:#ffffff;--pri:#4f46e5;--pri-soft:#eef2ff;
+    --txt:#111827;--muted:#6b7280;--br:#e5e7eb;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    padding:24px;
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:radial-gradient(circle at top,#e0e7ff 0,#f9fafb 45%,#eef2ff 100%);
+    color:var(--txt);
+    display:flex;
+    justify-content:center;
+  }
+  .app{
+    width:100%;
+    max-width:1280px;
+  }
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-bottom:20px;
+  }
+  header h1{
+    margin:0;
+    font-size:1.9rem;
+    font-weight:800;
+    letter-spacing:.02em;
+  }
+  header span{
+    font-size:1rem;
+    color:var(--muted);
+    font-weight:800;
+  }
+  .grid-2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin-bottom:16px;
+  }
+  .grid-3{
+    display:grid;
+    grid-template-columns:1.1fr 1.1fr 1fr;
+    gap:16px;
+    margin-bottom:16px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid rgba(148,163,184,.35);
+    border-radius:18px;
+    box-shadow:0 22px 45px rgba(15,23,42,.12);
+    padding:18px 18px 20px;
+  }
+  .card h2{
+    margin:0 0 10px;
+    font-size:1.15rem;
+    display:flex;
+    gap:.45rem;
+    align-items:center;
+  }
+  .pill{
+    font-size:.7rem;
+    background:var(--pri-soft);
+    color:var(--pri);
+    padding:.12rem .55rem;
+    border-radius:999px;
+  }
+  .subtitle{
+    color:var(--muted);
+    font-size:.88rem;
+    margin:0 0 10px;
+  }
+  .section-title{
+    margin:8px 0 4px;
+    color:var(--muted);
+    font-size:.8rem;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    font-weight:600;
+  }
+  .row{
+    display:flex;
+    gap:10px;
+    margin-bottom:8px;
+  }
+  .row>div{flex:1}
+  label.small{
+    display:block;
+    font-size:.78rem;
+    color:var(--muted);
+    margin-bottom:3px;
+  }
+  input[type=number],select{
+    width:100%;
+    padding:7px 9px;
+    border:1px solid var(--br);
+    border-radius:9px;
+    background:#f9fafb;
+    font-size:.88rem;
+  }
+  input[type=number]:focus,select:focus{
+    outline:2px solid var(--pri-soft);
+    border-color:var(--pri);
+    background:#ffffff;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:.82rem;
+  }
+  th,td{
+    padding:6px 6px;
+    text-align:left;
+  }
+  thead tr{background:#f9fafb}
+  th{
+    color:var(--muted);
+    font-weight:600;
+    border-bottom:1px solid var(--br);
+    font-size:.78rem;
+  }
+  tbody tr+tr td{border-top:1px solid #f3f4f6}
+  .btn{
+    border:none;
+    border-radius:999px;
+    padding:7px 11px;
+    font-size:.8rem;
+    cursor:pointer;
+    background:#eef2ff;
+    color:#3730a3;
+    font-weight:500;
+  }
+  .btn-danger{background:#fee2e2;color:#b91c1c}
+  .result{
+    background:#f9fafb;
+    border-radius:12px;
+    padding:9px 11px;
+    margin-top:8px;
+    font-size:.9rem;
+  }
+  .result .line{
+    display:flex;
+    justify-content:space-between;
+    margin:3px 0;
+  }
+  .hi{font-weight:700;color:var(--pri)}
+  .note{font-size:.78rem;color:var(--muted)}
+  .summary{
+    background:linear-gradient(135deg,var(--pri),#6366f1);
+    color:#fff;
+    border-radius:18px;
+    padding:16px 18px;
+    box-shadow:0 24px 50px rgba(79,70,229,.38);
+  }
+  .summary .hd{
+    opacity:.9;
+    text-transform:uppercase;
+    font-size:.82rem;
+    letter-spacing:.1em;
+    margin-bottom:8px;
+  }
+  .summary .main{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+  }
+  @media (max-width:900px){
+    .grid-2,.grid-3{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Aplicación cálculo previsión de cargas</h1>
+    <span>Eduardo Fernández García</span>
+  </header>
+
+  <!-- ================= VIVIENDAS + ASC/MOTORES ================= -->
+  <div class="grid-2">
+    <!-- Viviendas con Cs -->
+    <section class="card" id="cardViviendas">
+      <h2>Previsión de potencia – Viviendas <span class="pill">Coef. Cs</span></h2>
+      <p class="subtitle">Electrificación básica/elevada con coeficiente de simultaneidad según ITC.</p>
+
+      <div class="section-title">Electrificación básica</div>
+      <div class="row">
+        <div>
+          <label class="small" for="nBas1">Nº Viv. Básica (g1)</label>
+          <input type="number" id="nBas1" min="0" value="0">
+        </div>
+        <div>
+          <label class="small" for="potBas1">Potencia/viv</label>
+          <select id="potBas1">
+            <option value="5750">5.750 W</option>
+            <option value="7360">7.360 W</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label class="small" for="nBas2">Nº Viv. Básica (g2)</label>
+          <input type="number" id="nBas2" min="0" value="0">
+        </div>
+        <div>
+          <label class="small" for="potBas2">Potencia/viv</label>
+          <select id="potBas2">
+            <option value="5750">5.750 W</option>
+            <option value="7360">7.360 W</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-title">Electrificación elevada</div>
+      <div class="row">
+        <div>
+          <label class="small" for="nElv1">Nº Viv. Elevada (g1)</label>
+          <input type="number" id="nElv1" min="0" value="0">
+        </div>
+        <div>
+          <label class="small" for="potElv1">Potencia/viv</label>
+          <select id="potElv1">
+            <option value="9200">9.200 W</option>
+            <option value="11500">11.500 W</option>
+            <option value="14490">14.490 W</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label class="small" for="nElv2">Nº Viv. Elevada (g2)</label>
+          <input type="number" id="nElv2" min="0" value="0">
+        </div>
+        <div>
+          <label class="small" for="potElv2">Potencia/viv</label>
+          <select id="potElv2">
+            <option value="9200">9.200 W</option>
+            <option value="11500">11.500 W</option>
+            <option value="14490">14.490 W</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="result">
+        <div class="line"><span>Nº viviendas</span><span id="vivTotal">0</span></div>
+        <div class="line"><span>Potencia suma</span><span id="potViviendasSuma">0 W</span></div>
+        <div class="line"><span>Media por vivienda</span><span id="potViviendasMedia">0 W</span></div>
+        <div class="line"><span>Cs</span><span id="CsSpan">0</span></div>
+        <div class="line"><span>Carga conjunto viviendas</span><span class="hi" id="cargaViviendas">0 W</span></div>
+      </div>
+    </section>
+
+    <!-- Ascensores (×1,3) y Motores (mayor ×1,25) dinámicos -->
+    <section class="card" id="cardAscMotores">
+      <h2>Servicios generales – Ascensores y Motores <span class="pill">ITA-BT</span></h2>
+      <p class="subtitle">
+        Añade/elimina líneas. Ascensores ×<b>1,3</b>. Marca un motor como <b>mayor</b> (×<b>1,25</b>).
+        Motores en <b>W</b> o <b>CV</b>.
+      </p>
+
+      <!-- ASCENSORES -->
+      <div class="section-title">Ascensores (cada fila ×1,3)</div>
+      <table id="tablaAsc">
+        <thead>
+          <tr><th>#</th><th>Tipo</th><th>P unidad (W)</th><th>Unidades</th><th>Subtotal (W)</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="row">
+        <button class="btn" id="addAsc">+ Añadir ascensor</button>
+        <button class="btn btn-danger" id="resetAsc">Reiniciar</button>
+      </div>
+      <div class="result">
+        <div class="line"><span>Suma ascensores (base)</span><span id="ascBase">0 W</span></div>
+        <div class="line"><span>Ascensores con coeficiente</span><span class="hi" id="ascCoef">0 W</span></div>
+      </div>
+
+      <!-- MOTORES -->
+      <div class="section-title">Motores (marca uno como “Mayor”)</div>
+      <table id="tablaMot">
+        <thead>
+          <tr><th>Mayor</th><th>Potencia</th><th>Unidad</th><th>Unidades</th><th>Subtotal (W)</th><th></th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="row">
+        <button class="btn" id="addMot">+ Añadir motor</button>
+        <button class="btn btn-danger" id="resetMot">Reiniciar</button>
+      </div>
+      <div class="result">
+        <div class="line"><span>Motor mayor ×1,25</span><span id="motMayor125">0 W</span></div>
+        <div class="line"><span>Otros motores</span><span id="motOtros">0 W</span></div>
+        <div class="line"><span>Total ascensores + motores</span><span class="hi" id="ascMotTotal">0 W</span></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= ALUMBRADO / LOCALES / GARAJE ================= -->
+  <div class="grid-3">
+    <!-- ALUMBRADO -->
+    <section class="card" id="cardAlumbrado">
+      <h2>Servicios generales – Alumbrado <span class="pill">Inc./Fluor.</span></h2>
+      <p class="subtitle">
+        Portal/Comunes y Caja de escalera: Incandescencia (15/7 W·m²) o Fluorescencia (8/4 W·m²).
+        Si es fluorescencia, la potencia resultante se multiplica por <b>1,8</b>.
+      </p>
+
+      <div class="row">
+        <div>
+          <label class="small" for="m2Portal">Portal y comunes (m²)</label>
+          <input type="number" id="m2Portal" min="0" value="0">
+        </div>
+        <div>
+          <label class="small" for="tecPortal">Tecnología</label>
+          <select id="tecPortal">
+            <option value="inc">Incandescencia (15 W/m²)</option>
+            <option value="fluor">Fluorescencia (8 W/m²)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label class="small" for="m2Esc">Caja de escalera (m²)</label>
+          <input type="number" id="m2Esc" min="0" value="0">
+        </div>
+        <div>
+          <label class="small" for="tecEsc">Tecnología</label>
+          <select id="tecEsc">
+            <option value="inc">Incandescencia (7 W/m²)</option>
+            <option value="fluor">Fluorescencia (4 W/m²)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label class="small" for="udsOtrosAlum">Otras luminarias (uds)</label>
+          <input type="number" id="udsOtrosAlum" min="0" value="0">
+        </div>
+        <div>
+          <label class="small" for="potOtrosAlum">Potencia por unidad (W)</label>
+          <input type="number" id="potOtrosAlum" min="0" value="0">
+        </div>
+      </div>
+
+      <div class="result">
+        <div class="line"><span>Portal/Comunes</span><span id="potPortal">0 W</span></div>
+        <div class="line"><span>Caja de escalera</span><span id="potEscalera">0 W</span></div>
+        <div class="line"><span>Otras luminarias</span><span id="potAlumOtros">0 W</span></div>
+        <div class="line"><span>Total alumbrado</span><span class="hi" id="totalAlum">0 W</span></div>
+      </div>
+      <div class="note">En fluorescencia se aplica un factor 1,8 sobre la potencia calculada.</div>
+    </section>
+
+    <!-- LOCALES -->
+    <section class="card" id="cardLocales">
+      <h2>Locales comerciales y oficinas <span class="pill">100 W/m²</span></h2>
+      <p class="subtitle">P = Uds × max(100·m², 3.450 W).</p>
+      <table id="tablaLoc">
+        <thead><tr><th>Uds</th><th>m²</th><th>Mínimo (W)</th><th>Potencia (W)</th></tr></thead>
+        <tbody>
+          <tr class="filaLoc"><td><input type="number" class="uds" value="0"></td><td><input type="number" class="m2" value="0"></td><td class="min">0 W</td><td class="pot">0 W</td></tr>
+          <tr class="filaLoc"><td><input type="number" class="uds" value="0"></td><td><input type="number" class="m2" value="0"></td><td class="min">0 W</td><td class="pot">0 W</td></tr>
+          <tr class="filaLoc"><td><input type="number" class="uds" value="0"></td><td><input type="number" class="m2" value="0"></td><td class="min">0 W</td><td class="pot">0 W</td></tr>
+          <tr class="filaLoc"><td><input type="number" class="uds" value="0"></td><td><input type="number" class="m2" value="0"></td><td class="min">0 W</td><td class="pot">0 W</td></tr>
+        </tbody>
+      </table>
+      <div class="result"><div class="line"><span>Total locales</span><span class="hi" id="totalLoc">0 W</span></div></div>
+    </section>
+
+    <!-- GARAJES -->
+    <section class="card" id="cardGaraje">
+      <h2>Garajes <span class="pill">10/20 W·m²</span></h2>
+      <p class="subtitle">Ventilación natural o forzada con mínimo configurable.</p>
+      <div class="row">
+        <div>
+          <label class="small" for="m2Gar">Superficie (m²)</label>
+          <input type="number" id="m2Gar" value="0">
+        </div>
+        <div>
+          <label class="small" for="ventGar">Ventilación</label>
+          <select id="ventGar">
+            <option value="10">Natural (10 W/m²)</option>
+            <option value="20">Forzada (20 W/m²)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label class="small" for="minGar">Mínimo (W)</label>
+          <input type="number" id="minGar" value="" placeholder="Se calcula al introducir m²">
+        </div>
+      </div>
+      <div class="result">
+        <div class="line"><span>Potencia por m²</span><span id="potGarBruto">Sin datos</span></div>
+        <div class="line"><span>Total garaje</span><span class="hi" id="totalGar">Sin datos</span></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= VE + RESUMEN ================= -->
+  <div class="grid-2">
+    <section class="card" id="cardVE">
+      <h2>Recarga de vehículos eléctricos <span class="pill">ITC-BT-10 · SPL</span></h2>
+      <p class="subtitle">
+        Método simplificado ITC-BT-10 (10 % de plazas, potencia mínima 3.680 W por punto) o cálculo detallado
+        por número de puntos. El SPL permite aplicar un factor de simultaneidad 0,3.
+      </p>
+      <p class="note">
+        Potencia por punto de recarga considerada: <strong>3.680 W</strong> (valor fijo según ITC-BT-10).
+        Tanto plazas como puntos se calculan siempre con <strong>números enteros</strong>.
+      </p>
+
+      <div class="section-title">Método</div>
+      <div class="row">
+        <div>
+          <label class="small">Selecciona</label>
+          <select id="metVE">
+            <option value="itc">Simplificado ITC-BT-10</option>
+            <option value="det">Detallado (nº de puntos)</option>
+          </select>
+        </div>
+        <div>
+          <label class="small">SPL</label>
+          <select id="splVE">
+            <option value="1">Sin SPL (1,0)</option>
+            <option value="0.3">Con SPL (0,3)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Método simplificado: nº de plazas -->
+      <div id="bloqITC">
+        <div class="row">
+          <div>
+            <label class="small" for="plazas">Nº plazas del garaje</label>
+            <input type="number" id="plazas" value="0" min="0" step="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- Método detallado: nº de puntos, potencia fija 3.680 W -->
+      <div id="bloqDet" style="display:none;">
+        <div class="row">
+          <div>
+            <label class="small" for="puntos">Nº puntos de recarga</label>
+            <input type="number" id="puntos" value="0" min="0" step="1">
+          </div>
+          <div>
+            <label class="small">Potencia/punto</label>
+            <input type="text" value="3.680 W (fijo)" disabled>
+          </div>
+        </div>
+      </div>
+
+      <div class="result">
+        <div class="line"><span>Factor simultaneidad</span><span id="fSim">1,00</span></div>
+        <div class="line"><span>Potencia recarga VE</span><span class="hi" id="potVE">0 W</span></div>
+        <div class="line"><span>Potencia total edificio</span><span id="potEdif">0 W</span></div>
+      </div>
+    </section>
+
+    <!-- RESUMEN COLOREADO CON BOTONES W/kW, Imprimir y CSV -->
+    <section class="summary">
+      <div class="hd">Resumen de previsión de cargas</div>
+      <div class="main" style="margin-bottom:10px;">
+        <span style="font-size:0.9rem;">Total previsto de la instalación</span>
+        <span id="totKW"
+              style="font-size:1.45rem;font-weight:800;color:#bfdbfe;">
+          0,00 kW
+        </span>
+      </div>
+
+      <div class="row" style="margin-bottom:8px;gap:6px;">
+        <button class="btn" id="toggleUnidad" style="flex:1;background:#eef2ff;color:#111827;">
+          Ver en W
+        </button>
+        <button class="btn" id="btnImprimir" style="flex:1;background:#e0f2fe;color:#075985;">
+          Imprimir / PDF
+        </button>
+        <button class="btn" id="btnCSV" style="flex:1;background:#dcfce7;color:#166534;">
+          Exportar a Excel (CSV)
+        </button>
+      </div>
+
+      <div id="detalle" style="font-size:0.85rem;line-height:1.4;">
+        <div style="margin-bottom:4px;">
+          <span style="color:#e5e7eb;">Viviendas:</span>
+          <span id="detViv" style="color:#bbf7d0;font-weight:600;">0,00 kW</span>
+        </div>
+        <div style="margin-bottom:4px;">
+          <span style="color:#e5e7eb;">Ascensores y motores:</span>
+          <span id="detAscMot" style="color:#bbf7d0;font-weight:600;">0,00 kW</span>
+        </div>
+        <div style="margin-bottom:4px;">
+          <span style="color:#e5e7eb;">Alumbrado:</span>
+          <span id="detAlum" style="color:#bbf7d0;font-weight:600;">0,00 kW</span>
+        </div>
+        <div style="margin-bottom:4px;">
+          <span style="color:#e5e7eb;">Locales:</span>
+          <span id="detLoc" style="color:#bbf7d0;font-weight:600;">0,00 kW</span>
+        </div>
+        <div style="margin-bottom:4px;">
+          <span style="color:#e5e7eb;">Garaje:</span>
+          <span id="detGar" style="color:#bbf7d0;font-weight:600;">0,00 kW</span>
+        </div>
+        <div>
+          <span style="color:#e5e7eb;">Recarga VE:</span>
+          <span id="detVE" style="color:#bbf7d0;font-weight:600;">0,00 kW</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  const CV_TO_W = 736;
+  const n = v => isNaN(parseFloat(v)) ? 0 : parseFloat(v);
+  const Wfmt = w => `${w.toFixed(0)} W`;
+  const state = { viv:0, ascMot:0, alum:0, loc:0, gar:0, ve:0 };
+  const ids = s => document.getElementById(s);
+  let unidad = 'kw'; // 'kw' o 'w'
+
+  /* ==== Viviendas ==== */
+  const nBas1=ids("nBas1"), nBas2=ids("nBas2"), nElv1=ids("nElv1"), nElv2=ids("nElv2");
+  const pBas1=ids("potBas1"), pBas2=ids("potBas2"), pElv1=ids("potElv1"), pElv2=ids("potElv2");
+  const vivTotal=ids("vivTotal"), pVivSum=ids("potViviendasSuma"), pVivMed=ids("potViviendasMedia");
+  const csSpan=ids("CsSpan"), cargaViv=ids("cargaViviendas");
+
+  function Cs(v){
+    if(v<=0) return 0;
+    const map={
+      1:1,2:2,3:3,4:3.8,5:4.6,6:5.4,7:6.2,8:7,9:7.8,10:8.5,11:9.2,12:9.9,
+      13:10.6,14:11.3,15:11.9,16:12.5,17:13.1,18:13.7,19:14.3,20:14.8,21:15.3
+    };
+    return map[v] ?? (15.3 + (v-21)*0.5);
+  }
+
+  function recViv(){
+    const nb1=n(nBas1.value), nb2=n(nBas2.value), ne1=n(nElv1.value), ne2=n(nElv2.value);
+    const pb1=n(pBas1.value), pb2=n(pBas2.value), pe1=n(pElv1.value), pe2=n(pElv2.value);
+    const v=nb1+nb2+ne1+ne2;
+    const suma=nb1*pb1 + nb2*pb2 + ne1*pe1 + ne2*pe2;
+    const media=v? (suma/v) : 0;
+    const cs=Cs(v);
+    const carga=media*cs;
+    vivTotal.textContent=v.toFixed(0);
+    pVivSum.textContent=Wfmt(suma);
+    pVivMed.textContent=Wfmt(media);
+    csSpan.textContent=cs.toFixed(1);
+    cargaViv.textContent=Wfmt(carga);
+    state.viv=carga; recTotal();
+  }
+  [nBas1,nBas2,nElv1,nElv2].forEach(e=>e.addEventListener("input",recViv));
+  [pBas1,pBas2,pElv1,pElv2].forEach(e=>e.addEventListener("change",recViv));
+
+  /* ==== Ascensores + Motores ==== */
+  const tablaAsc=ids("tablaAsc").querySelector("tbody");
+  const ascBase=ids("ascBase"), ascCoef=ids("ascCoef");
+  const tablaMot=ids("tablaMot").querySelector("tbody");
+  const motMayor125=ids("motMayor125"), motOtros=ids("motOtros");
+  const ascMotTotal=ids("ascMotTotal");
+  ids("addAsc").addEventListener("click",addAsc);
+  ids("resetAsc").addEventListener("click",()=>{tablaAsc.innerHTML=""; recAscMot();});
+  ids("addMot").addEventListener("click",addMot);
+  ids("resetMot").addEventListener("click",()=>{tablaMot.innerHTML=""; addMot(true);});
+
+  const tiposAsc = [
+    {t:"ITA-1 · 400 kg · 5 pers", p:4500},
+    {t:"ITA-2 · 400 kg · 5 pers", p:7500},
+    {t:"ITA-3 · 630 kg · 8 pers", p:11500},
+    {t:"ITA-4 · 630 kg · 8 pers", p:18500},
+    {t:"ITA-5 · 1000 kg · 13 pers", p:29500},
+    {t:"ITA-6 · 1000 kg · 13 pers", p:46000},
+    {t:"Otro (manual)", p:"custom"}
+  ];
+
+  function reindex(tbody){
+    [...tbody.children].forEach((tr,i)=>{
+      const c=tr.querySelector(".idx"); if(c) c.textContent=i+1;
+    });
+  }
+
+  function addAsc(){
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td class="idx"></td>
+      <td><select class="tipo">
+        ${tiposAsc.map(x=>`<option value="${x.p}">${x.t}</option>`).join("")}
+      </select></td>
+      <td><input type="number" class="pot" value="4500" min="0" step="50"></td>
+      <td><input type="number" class="ud" value="1" min="0" step="1"></td>
+      <td class="sub">0 W</td>
+      <td><button class="btn btn-danger del">✕</button></td>`;
+    tablaAsc.appendChild(tr);
+    reindex(tablaAsc);
+    const sel=tr.querySelector(".tipo"), pot=tr.querySelector(".pot"),
+          ud=tr.querySelector(".ud"), del=tr.querySelector(".del");
+    sel.addEventListener("change",()=>{
+      if(sel.value==="custom"){pot.disabled=false; pot.value=0;}
+      else{pot.disabled=true; pot.value=sel.value;}
+      recAscMot();
+    });
+    [pot,ud].forEach(e=>e.addEventListener("input",recAscMot));
+    del.addEventListener("click",()=>{tr.remove();reindex(tablaAsc);recAscMot();});
+    recAscMot();
+  }
+
+  function addMot(markMayor=false){
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td style="text-align:center;"><input type="radio" name="mayorMot" class="mayor"></td>
+      <td><input type="number" class="pot" value="0" min="0" step="0.1"></td>
+      <td>
+        <select class="uni">
+          <option value="w">W</option>
+          <option value="cv">CV</option>
+        </select>
+      </td>
+      <td><input type="number" class="ud" value="1" min="0" step="1"></td>
+      <td class="sub">0 W</td>
+      <td><button class="btn btn-danger del">✕</button></td>`;
+    tablaMot.appendChild(tr);
+    if(markMayor || tablaMot.children.length===1) tr.querySelector(".mayor").checked=true;
+    const mayor=tr.querySelector(".mayor"), pot=tr.querySelector(".pot"),
+          uni=tr.querySelector(".uni"), ud=tr.querySelector(".ud"),
+          del=tr.querySelector(".del");
+    [mayor,pot,uni,ud].forEach(e=>e.addEventListener("input",recAscMot));
+    del.addEventListener("click",()=>{tr.remove();recAscMot();});
+    recAscMot();
+  }
+
+  function wFrom(val,unit){return unit==="cv"?val*CV_TO_W:val;}
+
+  function recAscMot(){
+    // Ascensores
+    let baseAsc=0;
+    tablaAsc.querySelectorAll("tr").forEach(tr=>{
+      const pot=n(tr.querySelector(".pot").value);
+      const ud=n(tr.querySelector(".ud").value);
+      const sub=pot*ud;
+      tr.querySelector(".sub").textContent=Wfmt(sub);
+      baseAsc+=sub;
+    });
+    const ascConCoef=baseAsc*1.3;
+    ascBase.textContent=Wfmt(baseAsc);
+    ascCoef.textContent=Wfmt(ascConCoef);
+
+    // Motores
+    let totalW=0, mayorW=0, mayorCheckedW=null;
+    tablaMot.querySelectorAll("tr").forEach(tr=>{
+      const pot=n(tr.querySelector(".pot").value);
+      const uni=tr.querySelector(".uni").value;
+      const ud=n(tr.querySelector(".ud").value);
+      const sub=wFrom(pot,uni)*ud;
+      tr.querySelector(".sub").textContent=Wfmt(sub);
+      totalW+=sub;
+      if(sub>mayorW) mayorW=sub;
+      if(tr.querySelector(".mayor").checked) mayorCheckedW=sub;
+    });
+    const mayorReal = mayorCheckedW!==null ? mayorCheckedW : mayorW;
+    const otros = Math.max(0,totalW-mayorReal);
+    const mayor125 = mayorReal*1.25;
+
+    motMayor125.textContent=Wfmt(mayorReal?mayor125:0);
+    motOtros.textContent=Wfmt(otros);
+
+    const total=ascConCoef + (mayorReal?mayor125:0) + otros;
+    ascMotTotal.textContent=Wfmt(total);
+    state.ascMot=total; recTotal();
+  }
+
+  /* ==== Alumbrado (fluorescencia ×1,8) ==== */
+  const m2Portal=ids("m2Portal"), tecPortal=ids("tecPortal"),
+        m2Esc=ids("m2Esc"), tecEsc=ids("tecEsc"),
+        udsOA=ids("udsOtrosAlum"), potOA=ids("potOtrosAlum");
+  const potPortal=ids("potPortal"), potEsc=ids("potEscalera"),
+        potAlumOtros=ids("potAlumOtros"), totalAlum=ids("totalAlum");
+
+  function wpm2Portal(){ return tecPortal.value==="fluor" ? 8 : 15; }
+  function wpm2Esc(){ return tecEsc.value==="fluor" ? 4 : 7; }
+
+  function recAlum(){
+    const basePortal = n(m2Portal.value)*wpm2Portal();
+    const baseEsc    = n(m2Esc.value)*wpm2Esc();
+
+    const p1 = tecPortal.value==="fluor" ? basePortal*1.8 : basePortal;
+    const p2 = tecEsc.value==="fluor"    ? baseEsc*1.8    : baseEsc;
+
+    const p3 = n(udsOA.value)*n(potOA.value);
+    const total = p1+p2+p3;
+
+    potPortal.textContent=Wfmt(p1);
+    potEsc.textContent=Wfmt(p2);
+    potAlumOtros.textContent=Wfmt(p3);
+    totalAlum.textContent=Wfmt(total);
+    state.alum=total; recTotal();
+  }
+
+  /* ==== Locales ==== */
+  const totalLoc=ids("totalLoc");
+  function recLoc(){
+    let total=0;
+    document.querySelectorAll("#tablaLoc .filaLoc").forEach(tr=>{
+      const uds=n(tr.querySelector(".uds").value);
+      const m2=n(tr.querySelector(".m2").value);
+      const min=Math.max(3450,100*m2);
+      const pot=uds*min;
+      tr.querySelector(".min").textContent=Wfmt(min);
+      tr.querySelector(".pot").textContent=Wfmt(pot);
+      total+=pot;
+    });
+    totalLoc.textContent=Wfmt(total);
+    state.loc=total; recTotal();
+  }
+
+  /* ==== Garaje ==== */
+  const m2Gar=ids("m2Gar"), ventGar=ids("ventGar"), minGar=ids("minGar");
+  const potGarBr=ids("potGarBruto"), totalGar=ids("totalGar");
+  function recGar(){
+    const sup = n(m2Gar.value);
+    if(!sup){
+      potGarBr.textContent = "Sin datos";
+      totalGar.textContent = "Sin datos";
+      state.gar = 0;
+      recTotal();
+      return;
+    }
+    const wpm2 = n(ventGar.value);
+    const bruto = sup*wpm2;
+    const minimo = Math.max(3450, bruto);
+    minGar.value = minimo.toFixed(0);
+    potGarBr.textContent = Wfmt(bruto);
+    totalGar.textContent = Wfmt(minimo);
+    state.gar = minimo;
+    recTotal();
+  }
+
+  /* ==== VE ==== */
+  const metVE=ids("metVE"), splVE=ids("splVE"), plazas=ids("plazas"),
+        puntos=ids("puntos"),
+        fSim=ids("fSim"), potVESpan=ids("potVE"), potEdif=ids("potEdif"),
+        bloqITC=ids("bloqITC"), bloqDet=ids("bloqDet");
+
+  function recVE(){
+    const fs=n(splVE.value);
+    fSim.textContent=fs.toFixed(2).replace(".",",");
+    let p=0;
+
+    if(metVE.value==="itc"){
+      // Método simplificado ITC-BT-10: 10% de plazas → nº entero de puntos, mínimo 1 si hay plazas
+      let pl = Math.round(n(plazas.value));
+      if(pl < 0) pl = 0;
+      plazas.value = pl;
+
+      if(pl > 0){
+        let puntosCalc = Math.ceil(pl * 0.10);   // entero hacia arriba
+        if(puntosCalc < 1) puntosCalc = 1;       // mínimo 1 punto si hay plazas
+        p = puntosCalc * 3680 * fs;
+      } else {
+        p = 0;
+      }
+    }else{
+      // Método detallado: nº de puntos entero, 3.680 W por punto
+      let pt = Math.round(n(puntos.value));
+      if(pt < 0) pt = 0;
+      puntos.value = pt;
+      p = 3680 * pt * fs;
+    }
+
+    potVESpan.textContent=Wfmt(p);
+    state.ve=p; recTotal();
+  }
+
+  function toggleVE(){
+    const det=metVE.value==="det";
+    bloqDet.style.display=det?"block":"none";
+    bloqITC.style.display=det?"none":"block";
+    recVE();
+  }
+
+  /* ==== Resumen Total con botón W/kW, imprimir y CSV ==== */
+  const totKW=ids("totKW"),
+        detViv=ids("detViv"),
+        detAscMot=ids("detAscMot"),
+        detAlum=ids("detAlum"),
+        detLoc=ids("detLoc"),
+        detGar=ids("detGar"),
+        detVE=ids("detVE"),
+        toggleUnidadBtn=ids("toggleUnidad"),
+        btnImprimir=ids("btnImprimir"),
+        btnCSV=ids("btnCSV");
+
+  function recTotal(){
+    const total = state.viv+state.ascMot+state.alum+state.loc+state.gar+state.ve;
+
+    if(unidad === 'kw'){
+      totKW.textContent=(total/1000).toFixed(2)+" kW";
+      detViv.textContent = (state.viv/1000).toFixed(2)+" kW";
+      detAscMot.textContent = (state.ascMot/1000).toFixed(2)+" kW";
+      detAlum.textContent = (state.alum/1000).toFixed(2)+" kW";
+      detLoc.textContent = (state.loc/1000).toFixed(2)+" kW";
+      detGar.textContent = (state.gar/1000).toFixed(2)+" kW";
+      detVE.textContent = (state.ve/1000).toFixed(2)+" kW";
+    } else {
+      totKW.textContent=total.toFixed(0)+" W";
+      detViv.textContent = state.viv.toFixed(0)+" W";
+      detAscMot.textContent = state.ascMot.toFixed(0)+" W";
+      detAlum.textContent = state.alum.toFixed(0)+" W";
+      detLoc.textContent = state.loc.toFixed(0)+" W";
+      detGar.textContent = state.gar.toFixed(0)+" W";
+      detVE.textContent = state.ve.toFixed(0)+" W";
+    }
+
+    potEdif.textContent = Wfmt(total);
+  }
+
+  toggleUnidadBtn.addEventListener("click",()=>{
+    unidad = unidad === 'kw' ? 'w' : 'kw';
+    toggleUnidadBtn.textContent = unidad === 'kw' ? "Ver en W" : "Ver en kW";
+    recTotal();
+  });
+
+  // Imprimir / PDF
+  btnImprimir.addEventListener("click",()=>{
+    window.print();
+  });
+
+  // Exportar a CSV (Excel)
+  btnCSV.addEventListener("click",()=>{
+    const total = state.viv+state.ascMot+state.alum+state.loc+state.gar+state.ve;
+    const filas = [
+      ["Concepto","Potencia (W)","Potencia (kW)"],
+      ["Viviendas", state.viv.toFixed(0), (state.viv/1000).toFixed(2)],
+      ["Ascensores y motores", state.ascMot.toFixed(0), (state.ascMot/1000).toFixed(2)],
+      ["Alumbrado", state.alum.toFixed(0), (state.alum/1000).toFixed(2)],
+      ["Locales", state.loc.toFixed(0), (state.loc/1000).toFixed(2)],
+      ["Garaje", state.gar.toFixed(0), (state.gar/1000).toFixed(2)],
+      ["Recarga VE", state.ve.toFixed(0), (state.ve/1000).toFixed(2)],
+      ["TOTAL", total.toFixed(0), (total/1000).toFixed(2)]
+    ];
+    const csv = filas.map(r=>r.join(";")).join("\n");
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "prevision_cargas.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // Listeners generales
+  [m2Portal,tecPortal,m2Esc,tecEsc,udsOA,potOA].forEach(e=>e.addEventListener("input",recAlum));
+  tecPortal.addEventListener("change",recAlum);
+  tecEsc.addEventListener("change",recAlum);
+
+  document.querySelectorAll("#tablaLoc input").forEach(e=>e.addEventListener("input",recLoc));
+  [m2Gar,ventGar,minGar].forEach(e=>e.addEventListener("input",recGar));
+
+  metVE.addEventListener("change",toggleVE);
+  [splVE,plazas,puntos].forEach(e=>e.addEventListener("input",recVE));
+
+  // Inicialización
+  addMot(true);          // Motores: empieza con uno marcado como mayor
+  recViv();
+  recAscMot();
+  recAlum();
+  recLoc();
+  recGar();
+  toggleVE();
+  recVE();
+</script>
+</body>
+</html>
